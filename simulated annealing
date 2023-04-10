@@ -1,0 +1,66 @@
+# simulated annealing search of a one-dimensional objective function
+from numpy import asarray
+from numpy import exp 
+from numpy.random import randn
+from numpy.random import rand
+from numpy.random import seed
+
+# objective function
+def objective(x):
+    # origin objective func => x[0]**2.0
+    # 2*x[0] + 2*x[1] + x[2] + x[3] = y
+    return 2*x[0] + 2*x[1] + x[2] + x[3]
+ 
+# simulated annealing algorithm
+def simulated_annealing(objective, bounds, n_iterations, step_size, temp, goal_eval):
+		# 파라미터 initialization
+    k1 = bounds[:, 0] + rand(len(bounds)) * (bounds[:, 1] - bounds[:, 0]) 
+    k2 = bounds[:, 0] + rand(len(bounds)) * (bounds[:, 1] - bounds[:, 0])
+    k3 = bounds[:, 0] + rand(len(bounds)) * (bounds[:, 1] - bounds[:, 0])
+    k4 = bounds[:, 0] + rand(len(bounds)) * (bounds[:, 1] - bounds[:, 0])
+    best = [k1, k2, k3, k4]
+    # evaluate the initial point
+    best_eval = objective(best)
+
+    # current working solution
+    curr, curr_eval = best, best_eval
+    # run the algorithm
+    for i in range(n_iterations):
+        # take a step
+        candidate = curr + randn(len(bounds)) * step_size
+        # evaluate candidate point
+        candidate_eval = objective(candidate)
+        # check for new best solution
+        if candidate_eval > best_eval: # 더 minumum에 가까워짐
+            best, best_eval = candidate, candidate_eval
+            candidate_diff = abs(goal_eval - candidate_eval)
+            curr_diff = abs(goal_eval - curr_eval)
+            diff = candidate_diff - curr_diff # diff가 작아야 candidate diff가 goal에 더 가깝다는 뜻이다. 
+            
+            #diff = candidate_eval - curr_eval
+            # calculate temperature for current epoch, temprature는 iteration 진행되면서 점점 작아짐
+            t = temp / float(i + 1)
+            
+            acceptance_probability = exp(-diff / t) # temprature 클수록(=iteration 초기 일수록),  diff가 작을수록(= 새로운 값이 목표값이랑 더 가까울수록) acceptance prob이 크다.
+
+            # check if we should keep the new point
+            if diff < 0 or rand() < acceptance_probability: # candidate이 current값보다 작고 acceptance prob이 random보다 크면 new point를 현재 point로 갱신한다.
+                curr, curr_eval = candidate, candidate_eval
+                
+    return [best, best_eval]
+ 
+# seed the pseudorandom number generator
+seed(1)
+# define range for input
+bounds = asarray([[-15.0, 15.0]])
+# define the total iterations
+n_iterations = 1000
+# define the maximum step size
+max_step_size = 0.1 
+# initial temperature
+temp = 10
+goal_eval = 130 
+# perform the simulated annealing search
+best, score = simulated_annealing(objective, bounds, n_iterations, max_step_size, temp, goal_eval)
+#print("Done!")
+print("f(%s) = %f" % (best, score))
